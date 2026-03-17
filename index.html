@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills Drawer</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#111112;--surface:#181819;--highlight:#28292B;
+  --text1:#fff;--text2:#686A6E;--text3:#28292B;
+  --accent:#43A9FF;--success:#66BB6A;--error:#EF5350;--liked:#F06292;
+  --border:rgba(255,255,255,0.12);--divider:#28292B;
+  --btn-bg:#fff;--btn-text:#0D0E0F;
+  --font:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:ui-monospace,'Cascadia Code','Fira Code',monospace;
+  --r-card:24px;--r-pill:1000px;
+  --drawer-w:420px;
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#fff;--surface:#F3F4F5;--highlight:#E9EAEB;
+    --text1:#0D0E0F;--text2:#686A6E;--text3:#E9EAEB;
+    --border:rgba(0,0,0,0.05);--divider:#E1E3E8;
+    --btn-bg:#111112;--btn-text:#fff;
+    --liked:#E91E63;--success:#2E7D32;
+  }
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text1);-webkit-font-smoothing:antialiased}
+
+/* ── Floating trigger button ── */
+.fab{
+  position:fixed;top:20px;right:20px;z-index:200;
+  width:48px;height:48px;border-radius:50%;border:none;
+  background:var(--accent);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(67,169,255,.35);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(67,169,255,.45)}
+.fab:active{transform:scale(.95)}
+.fab.hide{opacity:0;pointer-events:none;transform:scale(.8)}
+
+/* ── Scrim ── */
+.scrim{
+  position:fixed;inset:0;z-index:299;
+  background:rgba(0,0,0,.45);
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.scrim.open{opacity:1;pointer-events:auto}
+
+/* ── Side drawer ── */
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:300;
+  width:var(--drawer-w);max-width:100vw;
+  background:var(--bg);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.32,.72,0,1);
+  box-shadow:-8px 0 30px rgba(0,0,0,.15);
+}
+.drawer.open{transform:translateX(0)}
+
+/* ── Drawer header ── */
+.d-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px 0;flex-shrink:0;
+}
+.d-hdr h2{font-size:22px;font-weight:700;letter-spacing:-0.02em}
+.d-close{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-family:var(--font);transition:background .15s;
+}
+.d-close:hover{background:var(--highlight)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--divider);padding:0 20px;flex-shrink:0}
+.tab{padding:10px 14px;font-size:13px;font-weight:500;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);transition:color .15s,border-color .15s;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--text1)}
+
+/* ── Scrollable content ── */
+.d-main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 20px 80px}
+.d-main::-webkit-scrollbar{display:none}.d-main{scrollbar-width:none}
+
+/* ── Filter pills ── */
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:16px;scrollbar-width:none;flex-shrink:0}
+.filters::-webkit-scrollbar{display:none}
+.pill{padding:6px 12px;border-radius:var(--r-pill);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all .15s}
+.pill:hover{border-color:var(--text2);color:var(--text1)}
+.pill.active{background:var(--btn-bg);color:var(--btn-text);border-color:var(--btn-bg)}
+
+/* ── Panel visibility ── */
+.panel{display:none}.panel.active{display:block}
+
+/* ── Section intro ── */
+.intro{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--divider)}
+.intro-sub{font-size:14px;font-weight:500;margin-bottom:2px}
+.intro-desc{font-size:12px;color:var(--text2)}
+
+/* ── Skill list ── */
+.skills{display:flex;flex-direction:column;gap:8px}
+
+/* ── Skill card ── */
+.card{display:flex;gap:12px;padding:12px;border-radius:var(--r-card);background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:transform .12s,background .12s;position:relative}
+.card:active{transform:scale(.98);background:var(--highlight)}
+.card-icon{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.card-icon svg{width:44px;height:44px}
+.card-body{flex:1;min-width:0}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:2px}
+.card-name{font-size:14px;font-weight:600;line-height:1.3}
+.card-desc{font-size:12px;color:var(--text2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:500;letter-spacing:.02em}
+.tag-cat{background:var(--highlight);color:var(--text2)}
+.tag-src{background:rgba(67,169,255,.1);color:var(--accent)}
+
+/* ── Fav button ── */
+.fav{width:28px;height:28px;border-radius:var(--r-pill);border:none;background:var(--highlight);cursor:pointer;padding:0;color:var(--text2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:color .15s,transform .12s,background .15s}
+.fav:hover{color:var(--liked)}
+.fav:active{transform:scale(1.15)}
+.fav.on{color:var(--liked);background:rgba(240,98,146,.12)}
+.fav.on svg{fill:var(--liked)}
+
+/* ── Empty state ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 20px}
+.empty-ico{font-size:40px;margin-bottom:12px;opacity:.25}
+.empty-t{font-size:14px;font-weight:500;margin-bottom:4px}
+.empty-d{font-size:12px;color:var(--text2)}
+
+/* ── Detail overlay (inside drawer) ── */
+.overlay{
+  position:absolute;inset:0;
+  background:var(--bg);z-index:10;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.32,.72,0,1);
+  overflow:hidden;
+}
+.overlay.open{transform:translateY(0)}
+.ov-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;flex-shrink:0}
+.ov-close{width:32px;height:32px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:var(--font);transition:background .15s}
+.ov-close:hover{background:var(--highlight)}
+.ov-body{flex:1;overflow-y:auto;padding:8px 20px 32px;-webkit-overflow-scrolling:touch}
+.ov-body::-webkit-scrollbar{display:none}.ov-body{scrollbar-width:none}
+.ov-icon{width:56px;height:56px;margin-bottom:14px}
+.ov-icon svg{width:56px;height:56px}
+.ov-name{font-size:20px;font-weight:700;line-height:1.25;margin-bottom:4px}
+.ov-cat{font-size:13px;font-weight:500;color:var(--accent);margin-bottom:16px}
+.ov-desc{font-size:14px;color:var(--text2);line-height:1.5;margin-bottom:20px}
+.ov-section{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;padding-bottom:6px;margin-bottom:10px;border-bottom:1px solid var(--divider)}
+.ov-features{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.ov-features li{font-size:12px;color:var(--text2);padding-left:18px;position:relative;line-height:1.4}
+.ov-features li::before{content:"→";position:absolute;left:0;color:var(--accent);font-weight:500}
+.prompt-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;max-height:250px;overflow-y:auto}
+.prompt-block::-webkit-scrollbar{width:4px}
+.prompt-block::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r-pill)}
+.prompt-block code{font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--text1);white-space:pre-wrap;word-break:break-word}
+.cta{width:100%;padding:12px 20px;border-radius:var(--r-pill);border:none;background:var(--btn-bg);color:var(--btn-text);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta:active{opacity:.85}
+.cta.copied{background:#2E7D32;color:#fff}
+
+.hidden{display:none!important}
+
+@media(max-width:480px){
+  .drawer{width:100vw}
+}
+
+</style>
+</head>
+<body>
+
+<!-- Floating Action Button -->
+<button class="fab" id="fab" aria-label="Open Skills">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+</button>
+
+<!-- Scrim -->
+<div class="scrim" id="scrim"></div>
+
+<!-- Side Drawer -->
+<div class="drawer" id="drawer">
+
+  <div class="d-hdr">
+    <h2>Skills</h2>
+    <button class="d-close" id="drawerClose">✕</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="forYou">For You</button>
+    <button class="tab" data-tab="popular">Popular</button>
+    <button class="tab" data-tab="favorites">Favorites <span id="favBadge" class="hidden" style="display:inline-flex;min-width:16px;height:16px;border-radius:1000px;background:var(--liked);color:#fff;font-size:9px;font-weight:700;align-items:center;justify-content:center;padding:0 3px;margin-left:3px;vertical-align:middle">0</span></button>
+  </div>
+
+  <div class="d-main">
+    <!-- For You -->
+    <div class="panel active" data-panel="forYou">
+      <div class="intro">
+        <p class="intro-sub">Curated for you</p>
+        <p class="intro-desc">Based on your design systems and full-stack workflow</p>
+      </div>
+      <div class="skills" id="forYouList"></div>
+    </div>
+
+    <!-- Popular -->
+    <div class="panel" data-panel="popular">
+      <div class="filters">
+        <button class="pill active" data-cat="All">All</button>
+        <button class="pill" data-cat="Coding">Coding</button>
+        <button class="pill" data-cat="Writing">Writing</button>
+        <button class="pill" data-cat="Research">Research</button>
+        <button class="pill" data-cat="Design">Design</button>
+        <button class="pill" data-cat="Productivity">Productivity</button>
+        <button class="pill" data-cat="Data">Data</button>
+      </div>
+      <div class="skills" id="popularList"></div>
+    </div>
+
+    <!-- Favorites -->
+    <div class="panel" data-panel="favorites">
+      <div class="skills" id="favList"></div>
+      <div class="empty" id="emptyFav">
+        <div class="empty-ico">☆</div>
+        <p class="empty-t">No favorites yet</p>
+        <p class="empty-d">Tap the heart on any skill to save it here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Overlay (inside drawer) -->
+  <div class="overlay" id="overlay">
+    <div class="ov-hdr">
+      <span></span>
+      <button class="ov-close" id="closeBtn">✕</button>
+    </div>
+    <div class="ov-body">
+      <div class="ov-icon" id="ovIcon"></div>
+      <div class="ov-name" id="ovName"></div>
+      <div class="ov-cat" id="ovCat"></div>
+      <p class="ov-desc" id="ovDesc"></p>
+      <div class="ov-section">Features</div>
+      <ul class="ov-features" id="ovFeatures"></ul>
+      <div class="ov-section">System Prompt</div>
+      <div class="prompt-block"><code id="ovPrompt"></code></div>
+      <button class="cta" id="copyBtn">Copy Prompt</button>
+    </div>
+  </div>
+
+</div>
+
+<script>window.__SKILLS__=[{"id": "fy-1", "name": "Design-Token Extractor", "desc": "Reads Figma JSON or design-token files and generates CSS custom properties, Tailwind config, or Style Dictionary output.", "longDesc": "This skill transforms raw design token definitions from tools like Figma, Tokens Studio, or Style Dictionary into production-ready code. It understands semantic aliasing, theme layers (light/dark), and outputs to CSS custom properties, Tailwind config, SCSS maps, or JSON.", "category": "Design", "source": "Community", "section": "forYou", "features": ["Parses Figma Variables & Tokens Studio JSON", "Generates CSS, SCSS, Tailwind, or Style Dictionary output", "Handles semantic aliasing and theme layers", "Supports color, spacing, typography, and shadow tokens"], "prompt": "You are a Design Token Engineer. When given raw design token data (Figma Variables JSON, Tokens Studio JSON, Style Dictionary input, or plain descriptions), you transform it into production-ready code.\n\nRules:\n- Ask which output format the user wants: CSS custom properties, SCSS map, Tailwind config, or Style Dictionary JSON.\n- Organize tokens into categories: color, spacing, typography, elevation, border-radius, and breakpoints.\n- For color tokens, detect semantic aliasing (e.g. \"surface-primary\" referencing \"gray-0\") and preserve the alias chain.\n- Support light/dark theme layers. Output both as separate selectors or media queries.\n- Use kebab-case for CSS variables, camelCase for JS/JSON, and dot-notation for Style Dictionary.\n- Add inline comments mapping each token back to its source name.\n- If the input is ambiguous, list assumptions before generating output.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy1\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#c49a4a\"/><stop offset=\"1\" stop-color=\"#d4a84a\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy1)\"/><circle cx=\"18\" cy=\"20\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" opacity=\".7\"/><circle cx=\"24\" cy=\"17\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" opacity=\".85\"/><circle cx=\"30\" cy=\"20\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><path d=\"M16 30 Q24 27 32 30\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/></svg>"}, {"id": "fy-2", "name": "React Component Architect", "desc": "Generates well-structured React components from descriptions with TypeScript types, proper composition, and accessibility built in.", "longDesc": "Describe a UI component in plain English and this skill produces a complete React component with TypeScript interfaces, proper prop composition, ref forwarding, ARIA attributes, and keyboard navigation. Follows compound-component patterns when appropriate.", "category": "Coding", "source": "Cursor", "section": "forYou", "features": ["TypeScript-first with strict prop interfaces", "Built-in ARIA roles and keyboard navigation", "Compound component patterns for complex UIs", "Automatic Storybook story generation"], "prompt": "You are an expert React/TypeScript component architect. When asked to build a UI component, follow these rules:\n\n1. Define a clear Props interface with JSDoc descriptions. Extend native HTML element props where appropriate using ComponentPropsWithoutRef.\n2. Use forwardRef for all components that render a DOM element.\n3. Add ARIA roles, labels, and keyboard event handlers (Enter, Space, Escape, Arrow keys) as appropriate.\n4. For complex components (dropdowns, tabs, accordions), use the compound-component pattern with React Context.\n5. Separate visual styling from logic. Export unstyled component + a styled wrapper if a styling approach is specified.\n6. Include a default export and a Storybook story (CSF 3 format) that demonstrates all prop variants.\n7. Never use 'any' type. Prefer discriminated unions for variant props.\n8. Keep each component file under 150 lines. Extract hooks and utilities into separate files if needed.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy2\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5e8260\"/><stop offset=\"1\" stop-color=\"#8fb08f\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy2)\"/><ellipse cx=\"24\" cy=\"24\" rx=\"10\" ry=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" transform=\"rotate(-30 24 24)\"/><ellipse cx=\"24\" cy=\"24\" rx=\"10\" ry=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" transform=\"rotate(30 24 24)\"/><ellipse cx=\"24\" cy=\"24\" rx=\"10\" ry=\"4\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><circle cx=\"24\" cy=\"24\" r=\"2\" fill=\"#fff\"/></svg>"}, {"id": "fy-3", "name": "Codebase Navigator", "desc": "Maps project architecture, identifies key files, and explains how modules connect — ideal for onboarding into new repos.", "longDesc": "Point this skill at any repository and it will produce a clear architectural map: entry points, dependency graph, data flow, and module boundaries. Great for onboarding, code reviews, or understanding unfamiliar open-source projects.", "category": "Coding", "source": "Community", "section": "forYou", "features": ["Generates visual dependency graphs", "Identifies architectural patterns (MVC, Clean, etc.)", "Maps data flow through the application", "Highlights potential circular dependencies"], "prompt": "You are a Codebase Analyst. When given source code, file trees, or repository contents, produce a clear architectural overview.\n\nYour output must include:\n1. Entry points: Main files that bootstrap the application.\n2. Architecture pattern: Identify if it follows MVC, Clean Architecture, hexagonal, feature-sliced, or another pattern.\n3. Module map: List each major module/directory, its responsibility, and what it depends on.\n4. Data flow: Trace how data moves from input (API, user event) through the system to output (render, response).\n5. Key abstractions: Interfaces, base classes, or shared utilities that tie modules together.\n6. Risk areas: Circular dependencies, god files (>500 lines), tightly coupled modules.\n\nFormat: Use markdown with headers, bullet lists, and a simple ASCII dependency graph.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy3\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d7f94\"/><stop offset=\"1\" stop-color=\"#8aacbf\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy3)\"/><circle cx=\"24\" cy=\"16\" r=\"2.5\" fill=\"#fff\"/><circle cx=\"16\" cy=\"28\" r=\"2.5\" fill=\"#fff\"/><circle cx=\"32\" cy=\"28\" r=\"2.5\" fill=\"#fff\"/><line x1=\"24\" y1=\"18.5\" x2=\"16\" y2=\"25.5\" stroke=\"#fff\" stroke-width=\"1.2\"/><line x1=\"24\" y1=\"18.5\" x2=\"32\" y2=\"25.5\" stroke=\"#fff\" stroke-width=\"1.2\"/><line x1=\"18.5\" y1=\"28\" x2=\"29.5\" y2=\"28\" stroke=\"#fff\" stroke-width=\"1.2\" opacity=\".6\"/></svg>"}, {"id": "fy-4", "name": "Test Writer Pro", "desc": "Analyzes functions and generates comprehensive unit tests covering happy paths, edge cases, and error scenarios.", "longDesc": "Paste any function or module and receive complete test suites. Supports Jest, Vitest, Pytest, and Go testing. Automatically identifies edge cases, boundary conditions, and error paths.", "category": "Coding", "source": "Official", "section": "forYou", "features": ["Supports Jest, Vitest, Pytest, Go testing", "Automatic edge-case identification", "Generates mocks and fixtures", "Covers happy paths, boundaries, and error states"], "prompt": "You are a Test Engineer. When given a function, class, or module, generate a comprehensive test suite.\n\nRules:\n1. Ask which framework to use if not specified (Jest, Vitest, Pytest, Go testing, etc.).\n2. Organize tests into describe/context blocks: Happy Path, Edge Cases, Error Handling, Boundary Conditions.\n3. For each test, write a clear 'it should...' description that documents the expected behavior.\n4. Generate realistic mock data and fixtures. Avoid trivial placeholder values.\n5. Mock external dependencies (APIs, databases, file system) and assert they were called correctly.\n6. Test boundary values: empty inputs, null/undefined, maximum lengths, zero, negative numbers.\n7. For async code, test both resolved and rejected paths.\n8. Aim for >90% branch coverage. Call out any untestable branches and why.\n9. Keep each test focused on one assertion. Prefer many small tests over few large ones.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy4\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4a7a78\"/><stop offset=\"1\" stop-color=\"#7aaba8\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy4)\"/><path d=\"M21 14 V20 L15 32 H33 L27 20 V14\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"20\" y1=\"14\" x2=\"28\" y2=\"14\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><path d=\"M17 26 H31\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><circle cx=\"22\" cy=\"29\" r=\"1\" fill=\"#fff\" opacity=\".7\"/></svg>"}, {"id": "fy-5", "name": "Figma-to-Code Bridge", "desc": "Translates Figma component specs into pixel-perfect CSS/HTML using your project's existing design tokens and conventions.", "longDesc": "Give this skill a Figma component's layout, spacing, and style data and it produces implementation code that references your project's CSS custom properties, class naming convention, and component library.", "category": "Design", "source": "Community", "section": "forYou", "features": ["Maps Figma auto-layout to CSS flexbox/grid", "References your project's design tokens", "Supports BEM, Tailwind, or CSS Modules output", "Handles responsive variants"], "prompt": "You are a Figma-to-Code specialist. When given Figma component specifications (layout, spacing, colors, typography, effects), produce production-ready HTML and CSS.\n\nRules:\n1. Map Figma Auto Layout to CSS Flexbox. Use Grid only when the layout has a 2D structure.\n2. Reference design tokens (CSS custom properties) instead of hardcoded values.\n3. Match the naming convention the user specifies (BEM, Tailwind utilities, CSS Modules, or plain classes).\n4. Translate Figma constraints (fill, hug, fixed) to the correct CSS sizing.\n5. Convert Figma effects to CSS: drop shadows, background blur, layer blur.\n6. Handle responsive variants if multiple Figma frames are provided for different breakpoints.\n7. Output clean, semantic HTML. Use appropriate elements (nav, section, article, button) not just divs.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy5\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#b0a090\"/><stop offset=\"1\" stop-color=\"#c4b5a0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy5)\"/><path d=\"M12 30 Q18 16 24 16 Q30 16 36 30\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/><line x1=\"16\" y1=\"30\" x2=\"16\" y2=\"23\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"24\" y1=\"30\" x2=\"24\" y2=\"16\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"32\" y1=\"30\" x2=\"32\" y2=\"23\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"12\" y1=\"30\" x2=\"36\" y2=\"30\" stroke=\"#fff\" stroke-width=\"1.2\"/></svg>"}, {"id": "fy-6", "name": "Security Code Reviewer", "desc": "Audits code for common vulnerabilities: injection, XSS, CSRF, insecure dependencies, and secrets leakage.", "longDesc": "This skill performs a focused security review on code snippets or full files. It checks for OWASP Top 10 vulnerabilities, identifies hardcoded secrets, flags insecure API patterns, and suggests remediations with code examples.", "category": "Coding", "source": "Official", "section": "forYou", "features": ["OWASP Top 10 vulnerability detection", "Secrets and API key detection", "Dependency vulnerability flagging", "Remediation suggestions with code"], "prompt": "You are a Security Code Reviewer. Analyze the provided code for vulnerabilities and produce a structured security report.\n\nCheck for:\n1. Injection: SQL injection, NoSQL injection, command injection, LDAP injection.\n2. XSS: Reflected, stored, and DOM-based cross-site scripting.\n3. Authentication/Authorization: Hardcoded credentials, missing auth checks, insecure session handling.\n4. Secrets: API keys, tokens, passwords in source code.\n5. Data exposure: Sensitive data in logs, error messages, or API responses.\n6. Insecure dependencies: Known vulnerable patterns in library usage.\n7. CSRF/SSRF: Missing CSRF tokens, unvalidated redirect URLs.\n\nFor each finding output: Severity, Location, Issue, Fix with code example.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_fy6\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d6f8a\"/><stop offset=\"1\" stop-color=\"#8a9bb0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_fy6)\"/><path d=\"M24 13 L33 17 V25 Q33 32 24 36 Q15 32 15 25 V17 Z\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/><path d=\"M20 25 L23 28 L29 21\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"}, {"id": "pop-1", "name": "Technical Writer", "desc": "Transforms rough notes, code comments, or bullet points into polished technical documentation, READMEs, and API guides.", "longDesc": "Feed it your rough notes, code comments, or disorganized bullet points and get back clear, well-structured technical docs. Supports README files, API documentation, architecture decision records, and runbooks.", "category": "Writing", "source": "Official", "section": "popular", "features": ["README and API doc generation", "Architecture Decision Records (ADRs)", "Runbook and onboarding guide creation", "Consistent tone and terminology"], "prompt": "You are a Technical Writer. Transform rough input (notes, bullet points, code comments, verbal descriptions) into clear, well-structured documentation.\n\nRules:\n1. Ask what document type is needed: README, API reference, ADR, runbook, onboarding guide, or changelog.\n2. Use a consistent voice: present tense, active voice, second person for instructions.\n3. Structure with clear headings, numbered steps for procedures, and code blocks for commands.\n4. For READMEs: include Overview, Prerequisites, Installation, Usage, Configuration, Contributing, and License sections.\n5. For API docs: use consistent format — Method, Path, Description, Parameters, Request Body, Response, Error Codes.\n6. Avoid jargon unless the audience is specified as technical.\n7. Keep paragraphs under 3 sentences. Prefer bullet lists for scanability.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop1\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9a8a7a\"/><stop offset=\"1\" stop-color=\"#b0a898\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop1)\"/><path d=\"M30 12 Q22 20 18 32\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/><path d=\"M30 12 Q34 18 30 24 Q26 20 22 18\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"15\" y1=\"34\" x2=\"25\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\" stroke-linecap=\"round\"/></svg>"}, {"id": "pop-2", "name": "Data Analyst", "desc": "Analyzes CSV, JSON, or SQL output and produces insights, visualizations descriptions, and summary statistics.", "longDesc": "Upload or paste data in CSV, JSON, or SQL result format and this skill performs exploratory data analysis: summary statistics, distribution analysis, correlation detection, outlier identification, and clear narrative insights.", "category": "Data", "source": "Official", "section": "popular", "features": ["Summary statistics and distributions", "Correlation and trend detection", "Outlier identification", "Plain-English narrative insights"], "prompt": "You are a Data Analyst. When given data (CSV, JSON, SQL results), perform exploratory data analysis and produce clear insights.\n\nYour analysis must include:\n1. Shape: Row count, column count, data types.\n2. Summary statistics: Mean, median, std dev, min, max for numeric columns.\n3. Missing data: Percentage of nulls per column. Suggest handling strategy.\n4. Distributions: Identify skewed, normal, or bimodal distributions.\n5. Correlations: Identify top correlated variable pairs.\n6. Trends: If time-series data, note trends, seasonality, and anomalies.\n7. Narrative: Write 3-5 bullet points summarizing the most important findings.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop2\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d7f94\"/><stop offset=\"1\" stop-color=\"#7a9bb0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop2)\"/><path d=\"M13 28 Q17 20 21 24 Q25 28 29 18 Q33 12 35 16\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.4\" stroke-linecap=\"round\"/><line x1=\"13\" y1=\"34\" x2=\"35\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/><line x1=\"13\" y1=\"34\" x2=\"13\" y2=\"14\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/></svg>"}, {"id": "pop-3", "name": "Deep Research Assistant", "desc": "Conducts multi-step research on any topic, synthesizing sources into structured reports with citations.", "longDesc": "Give it a research question and it will conduct multi-step investigation, cross-reference sources, identify consensus and disagreements, and produce a structured report with proper citations and confidence levels.", "category": "Research", "source": "Official", "section": "popular", "features": ["Multi-step investigation workflow", "Source cross-referencing and validation", "Structured reports with citations", "Confidence level assessment"], "prompt": "You are a Research Analyst. When given a question or topic, conduct thorough multi-step research and produce a structured report.\n\nWorkflow:\n1. Clarify scope: Restate the question. Identify sub-questions.\n2. Investigate: For each sub-question, gather information. Cite sources.\n3. Cross-reference: Compare findings across sources.\n4. Synthesize: Produce a report with Executive Summary, Key Findings, Detailed Analysis, Confidence Assessment, Open Questions, and Sources.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop3\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#c49a4a\"/><stop offset=\"1\" stop-color=\"#d4a84a\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop3)\"/><circle cx=\"22\" cy=\"22\" r=\"7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\"/><line x1=\"27\" y1=\"27\" x2=\"34\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><line x1=\"22\" y1=\"18\" x2=\"22\" y2=\"20\" stroke=\"#fff\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\".7\"/></svg>"}, {"id": "pop-4", "name": "Debug Detective", "desc": "Systematically diagnoses bugs by analyzing error messages, stack traces, and code context to find root causes.", "longDesc": "Paste an error message, stack trace, or describe unexpected behavior and this skill walks through a systematic debugging process. It identifies likely root causes, suggests diagnostic steps, and provides fix implementations.", "category": "Coding", "source": "Community", "section": "popular", "features": ["Stack trace analysis and interpretation", "Root cause hypothesis generation", "Step-by-step diagnostic plans", "Fix implementation with explanation"], "prompt": "You are a Debug Detective. When given an error message, stack trace, or unexpected behavior, systematically diagnose the root cause.\n\nProcess:\n1. Parse the error: Extract error type, message, file, and line number.\n2. Generate hypotheses: List 2-4 likely root causes, ranked by probability.\n3. Diagnostic plan: Suggest specific checks for the top hypothesis.\n4. Trace the data flow: Walk backwards from the error through the call stack.\n5. Provide the fix: Corrected code with clear explanation.\n6. Prevent recurrence: Suggest a test case or validation.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop4\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#b06040\"/><stop offset=\"1\" stop-color=\"#c48060\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop4)\"/><ellipse cx=\"24\" cy=\"26\" rx=\"6\" ry=\"7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\"/><line x1=\"24\" y1=\"19\" x2=\"24\" y2=\"33\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><line x1=\"18\" y1=\"24\" x2=\"14\" y2=\"20\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><line x1=\"30\" y1=\"24\" x2=\"34\" y2=\"20\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><circle cx=\"21\" cy=\"24\" r=\"1\" fill=\"#fff\"/><circle cx=\"27\" cy=\"24\" r=\"1\" fill=\"#fff\"/></svg>"}, {"id": "pop-5", "name": "Email Composer", "desc": "Drafts professional emails with the right tone for any context — from cold outreach to executive summaries.", "longDesc": "Describe the situation, audience, and desired outcome and get a polished email draft. Handles cold outreach, follow-ups, meeting summaries, escalations, and executive updates with appropriate tone calibration.", "category": "Writing", "source": "Community", "section": "popular", "features": ["Tone calibration for audience and context", "Cold outreach and follow-up templates", "Executive summary formatting", "Subject line optimization"], "prompt": "You are a Professional Email Composer. Given a situation, audience, and desired outcome, draft a polished email.\n\nRules:\n1. Write a compelling subject line under 8 words.\n2. Open with context the reader needs.\n3. State the ask within the first 2 sentences.\n4. Keep total length under 150 words unless detailed update needed.\n5. Use bullet points for multiple items.\n6. Close with a clear next step and timeline.\n7. Match formality to the audience.\n8. Provide 2 variants if the tone is ambiguous.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop5\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#8a7a9a\"/><stop offset=\"1\" stop-color=\"#a898b0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop5)\"/><rect x=\"14\" y=\"14\" width=\"20\" height=\"16\" rx=\"2\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><path d=\"M14 18 L24 25 L34 18\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"14\" y1=\"30\" x2=\"20\" y2=\"25\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/><line x1=\"34\" y1=\"30\" x2=\"28\" y2=\"25\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/></svg>"}, {"id": "pop-6", "name": "System Design Mentor", "desc": "Walks through system design problems step-by-step: requirements, architecture, trade-offs, and scaling strategies.", "longDesc": "Describe a system design challenge and this skill guides you through the full process: clarifying requirements, estimating scale, choosing components, designing data models, addressing bottlenecks, and evaluating trade-offs.", "category": "Coding", "source": "Community", "section": "popular", "features": ["Requirement clarification framework", "Back-of-envelope capacity estimation", "Component selection and trade-off analysis", "Scaling strategy recommendations"], "prompt": "You are a System Design Mentor. Guide the user through designing scalable systems step by step.\n\nFramework:\n1. Requirements: Clarify functional and non-functional requirements.\n2. Estimation: Back-of-envelope calculations — DAU, QPS, storage, bandwidth.\n3. High-level design: Component diagram using ASCII art.\n4. Data model: Key entities, relationships, and storage choices.\n5. Deep dive: Pick the hardest component and design it in detail.\n6. Trade-offs: For every decision, state what you're trading.\n7. Bottlenecks: Identify failure points and mitigations.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop6\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5e8260\"/><stop offset=\"1\" stop-color=\"#8fb08f\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop6)\"/><rect x=\"14\" y=\"20\" width=\"8\" height=\"14\" rx=\"1\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\"/><rect x=\"26\" y=\"14\" width=\"8\" height=\"20\" rx=\"1\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\"/><path d=\"M22 27 L26 27\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><path d=\"M22 24 L26 21\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/></svg>"}, {"id": "pop-7", "name": "Meeting Notes → Actions", "desc": "Converts messy meeting transcripts into structured notes with decisions, action items, and owners.", "longDesc": "Paste a meeting transcript or rough notes and get back structured output: key discussion points, decisions made, action items with owners and deadlines, and open questions.", "category": "Productivity", "source": "Community", "section": "popular", "features": ["Decision and action item extraction", "Owner and deadline assignment", "Key discussion point summarization", "Follow-up email draft generation"], "prompt": "You are a Meeting Analyst. When given a meeting transcript or rough notes, produce structured meeting notes.\n\nOutput: Key Discussion Points, Decisions Made, Action Items (with Owner and Deadline), Open Questions, and a Follow-up email draft.\n\nDistinguish between decisions (final) and discussions (ongoing). If owners or deadlines aren't stated, mark them as TBD.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop7\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#b0a090\"/><stop offset=\"1\" stop-color=\"#c4b5a0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop7)\"/><rect x=\"14\" y=\"13\" width=\"20\" height=\"24\" rx=\"2\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><line x1=\"18\" y1=\"19\" x2=\"30\" y2=\"19\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"18\" y1=\"24\" x2=\"28\" y2=\"24\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"18\" y1=\"29\" x2=\"26\" y2=\"29\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><path d=\"M18 19 L16 19\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg>"}, {"id": "pop-8", "name": "Prompt Engineer", "desc": "Helps craft and refine prompts for Claude or GPT — optimizing for clarity, specificity, and consistent output.", "longDesc": "Describe what you want an AI to do and this skill helps you write an optimized prompt. It applies prompt engineering best practices: role setting, constraint definition, output formatting, few-shot examples, and chain-of-thought scaffolding.", "category": "Productivity", "source": "Official", "section": "popular", "features": ["Role and constraint optimization", "Few-shot example generation", "Chain-of-thought scaffolding", "A/B prompt variant suggestions"], "prompt": "You are a Prompt Engineer. Help the user craft effective prompts for LLMs.\n\nWhen the user describes what they want:\n1. Clarify the task precisely.\n2. Set the role with 'You are a [specific expert]'.\n3. Define constraints: output format, length, tone, what to avoid.\n4. Add structure: numbered steps, markdown headers, or XML tags.\n5. Include 1-2 few-shot examples.\n6. Handle edge cases.\n7. Output the final prompt in a copyable code block.\n8. Offer variants with trade-off explanations.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop8\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#c49a4a\"/><stop offset=\"1\" stop-color=\"#d4a84a\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop8)\"/><circle cx=\"24\" cy=\"24\" r=\"10\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><circle cx=\"24\" cy=\"24\" r=\"3\" fill=\"#fff\" opacity=\".8\"/><line x1=\"24\" y1=\"14\" x2=\"24\" y2=\"18\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><line x1=\"24\" y1=\"30\" x2=\"24\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><line x1=\"14\" y1=\"24\" x2=\"18\" y2=\"24\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><line x1=\"30\" y1=\"24\" x2=\"34\" y2=\"24\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/></svg>"}, {"id": "pop-9", "name": "Responsive Layout Builder", "desc": "Generates mobile-first CSS layouts using modern techniques: Grid, Flexbox, Container Queries, and fluid typography.", "longDesc": "Describe a layout and this skill produces clean, modern CSS using the best approach for each case. Favors CSS Grid and Flexbox, leverages Container Queries for component-level responsiveness, and implements fluid typography with clamp().", "category": "Design", "source": "Community", "section": "popular", "features": ["CSS Grid and Flexbox pattern selection", "Container Query implementations", "Fluid typography with clamp()", "Mobile-first progressive enhancement"], "prompt": "You are a CSS Layout Architect specializing in responsive design. Given a layout description, produce clean, modern CSS.\n\nRules:\n1. Always start mobile-first.\n2. Choose Flexbox for 1D layouts, Grid for 2D.\n3. Use Container Queries for component-level responsiveness.\n4. Implement fluid typography with clamp().\n5. Prefer logical properties for RTL compatibility.\n6. Avoid magic numbers — use CSS custom properties.\n7. Ensure touch targets are at least 44px.\n8. Output only CSS (or Tailwind if requested).", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop9\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d7f94\"/><stop offset=\"1\" stop-color=\"#7a9bb0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop9)\"/><rect x=\"14\" y=\"14\" width=\"20\" height=\"20\" rx=\"2\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><line x1=\"14\" y1=\"24\" x2=\"34\" y2=\"24\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><line x1=\"24\" y1=\"14\" x2=\"24\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><rect x=\"16\" y=\"16\" width=\"6\" height=\"6\" rx=\"1\" fill=\"#fff\" opacity=\".3\"/><rect x=\"26\" y=\"26\" width=\"6\" height=\"6\" rx=\"1\" fill=\"#fff\" opacity=\".3\"/></svg>"}, {"id": "pop-10", "name": "API Integrator", "desc": "Generates API client code, types, and error handling from OpenAPI specs, documentation URLs, or example requests.", "longDesc": "Provide an API spec, docs link, or sample request/response and this skill produces type-safe client code with authentication, pagination, retry logic, and error mapping.", "category": "Coding", "source": "Community", "section": "popular", "features": ["Type generation from OpenAPI specs", "Authentication and retry logic", "Pagination handling patterns", "Error mapping and custom exceptions"], "prompt": "You are an API Integration Specialist. Given an API specification or sample request/response, generate a production-ready client.\n\nOutput:\n1. TypeScript interfaces for all request/response shapes.\n2. Client class with methods for each endpoint.\n3. Authentication implementation.\n4. Error handling with retry logic and exponential backoff.\n5. Pagination via async generators.\n6. Configuration via a config object — never hardcode secrets.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop10\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#4a7a78\"/><stop offset=\"1\" stop-color=\"#7aaba8\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop10)\"/><path d=\"M16 18 L24 18 L24 24 L32 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"16\" cy=\"18\" r=\"2.5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\"/><circle cx=\"32\" cy=\"24\" r=\"2.5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\"/><path d=\"M20 30 L28 30\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\" stroke-linecap=\"round\"/><path d=\"M22 33 L26 33\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".3\" stroke-linecap=\"round\"/></svg>"}, {"id": "pop-11", "name": "Code Refactorer", "desc": "Identifies code smells and refactors for readability, performance, and maintainability while preserving behavior.", "longDesc": "Submit code and get refactoring suggestions ranked by impact. Identifies duplication, long methods, deep nesting, unclear naming, and missing abstractions.", "category": "Coding", "source": "Official", "section": "popular", "features": ["Code smell detection and ranking", "Before/after comparisons with rationale", "Behavior-preserving transformations", "Performance optimization suggestions"], "prompt": "You are a Code Refactoring Expert. Analyze code and suggest improvements ranked by impact.\n\nCheck for: Long methods (>30 lines), deep nesting (>3 levels), duplication, unclear naming, god objects, magic values, missing error handling.\n\nFor each suggestion show before/after code, explain why the change improves the code, and confirm behavior is preserved.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop11\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#b06040\"/><stop offset=\"1\" stop-color=\"#c48060\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop11)\"/><path d=\"M16 32 L20 18 L24 28 L28 14 L32 26\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M14 34 L34 34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/></svg>"}, {"id": "pop-12", "name": "SQL Query Builder", "desc": "Converts natural language questions into optimized SQL queries with joins, aggregations, and window functions.", "longDesc": "Describe your data schema and ask questions in plain English. This skill generates correct SQL with proper JOINs, GROUP BYs, window functions, CTEs, and index-aware optimizations.", "category": "Data", "source": "Community", "section": "popular", "features": ["Natural language to SQL translation", "Multi-dialect support (Postgres, MySQL, SQLite)", "Window functions and CTEs", "Query performance optimization hints"], "prompt": "You are a SQL Expert. Convert natural language questions into correct, optimized SQL queries.\n\nWorkflow:\n1. Ask for the schema if not provided.\n2. Ask for the SQL dialect (default PostgreSQL).\n3. Write queries using proper JOINs, CTEs, and window functions.\n4. Explain the query in 2-3 sentences.\n5. Suggest indexes for performance.\n6. Format with consistent indentation and uppercase keywords.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop12\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d6f8a\"/><stop offset=\"1\" stop-color=\"#8a9bb0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop12)\"/><rect x=\"14\" y=\"14\" width=\"20\" height=\"20\" rx=\"2\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><line x1=\"14\" y1=\"20\" x2=\"34\" y2=\"20\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"14\" y1=\"26\" x2=\"34\" y2=\"26\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/><line x1=\"22\" y1=\"14\" x2=\"22\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".4\"/></svg>"}, {"id": "pop-13", "name": "Content Summarizer", "desc": "Distills long articles, papers, or documents into key-point summaries at adjustable detail levels.", "longDesc": "Paste any long-form content and choose your summary depth: one-liner, key bullet points, executive summary, or detailed section-by-section breakdown.", "category": "Research", "source": "Official", "section": "popular", "features": ["Adjustable summary depth levels", "Core argument identification", "Key evidence and data extraction", "Section-by-section breakdowns"], "prompt": "You are a Content Summarizer. When given long-form content, produce clear summaries at the requested detail level.\n\nLevels:\n- One-liner: Single sentence capturing the core message.\n- Key points: 3-7 bullet points.\n- Executive summary: 1-2 paragraphs.\n- Detailed breakdown: Section-by-section.\n\nDefault to Key points. Identify the core argument first. Distinguish facts from opinions. Preserve important numbers and quotes.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop13\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#9a8a7a\"/><stop offset=\"1\" stop-color=\"#b0a898\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop13)\"/><line x1=\"14\" y1=\"17\" x2=\"34\" y2=\"17\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\"/><line x1=\"14\" y1=\"22\" x2=\"30\" y2=\"22\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\" opacity=\".7\"/><line x1=\"14\" y1=\"27\" x2=\"26\" y2=\"27\" stroke=\"#fff\" stroke-width=\"1\" stroke-linecap=\"round\" opacity=\".5\"/><line x1=\"14\" y1=\"32\" x2=\"22\" y2=\"32\" stroke=\"#fff\" stroke-width=\".8\" stroke-linecap=\"round\" opacity=\".3\"/></svg>"}, {"id": "pop-14", "name": "Sprint Planner", "desc": "Breaks down feature requests into estimated user stories, tasks, and acceptance criteria for agile teams.", "longDesc": "Describe a feature or epic and this skill decomposes it into user stories with acceptance criteria, technical tasks, story point estimates, and dependency mapping.", "category": "Productivity", "source": "Community", "section": "popular", "features": ["User story decomposition with acceptance criteria", "Story point estimation", "Task dependency mapping", "Sprint capacity planning"], "prompt": "You are an Agile Sprint Planner. When given a feature request or epic, decompose it into actionable sprint work.\n\nFor each user story provide: Title (As a/I want/So that), Acceptance criteria (Given/When/Then), Technical tasks, Story points (Fibonacci), and Dependencies.\n\nStories should be completable within one sprint. Split anything >8 points. Flag technical risks as spike stories.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop14\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#8a7a9a\"/><stop offset=\"1\" stop-color=\"#a898b0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop14)\"/><rect x=\"14\" y=\"14\" width=\"20\" height=\"5\" rx=\"1.5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\"/><rect x=\"14\" y=\"22\" width=\"12\" height=\"5\" rx=\"1.5\" fill=\"#fff\" opacity=\".5\"/><rect x=\"14\" y=\"30\" width=\"16\" height=\"5\" rx=\"1.5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.1\" opacity=\".6\"/></svg>"}, {"id": "pop-15", "name": "i18n Helper", "desc": "Extracts hardcoded strings, generates translation keys, and produces locale files for internationalization.", "longDesc": "Feed it a component or page and this skill identifies all hardcoded user-facing strings, generates semantic translation keys, produces locale JSON files, and handles pluralization and RTL considerations.", "category": "Coding", "source": "Community", "section": "popular", "features": ["Hardcoded string extraction", "Semantic translation key generation", "Pluralization and gender handling", "RTL layout considerations"], "prompt": "You are an i18n Specialist. When given source code, identify all user-facing strings and prepare them for translation.\n\nProcess:\n1. Scan for hardcoded strings.\n2. Generate semantic, hierarchical translation keys.\n3. Replace strings with i18n function calls.\n4. Produce locale JSON files.\n5. Handle pluralization with ICU MessageFormat.\n6. Flag concatenation issues and RTL layout concerns.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop15\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5e8260\"/><stop offset=\"1\" stop-color=\"#8fb08f\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop15)\"/><circle cx=\"24\" cy=\"24\" r=\"10\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><path d=\"M19 18 Q24 14 29 18\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".6\"/><line x1=\"24\" y1=\"24\" x2=\"24\" y2=\"34\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><line x1=\"14\" y1=\"24\" x2=\"34\" y2=\"24\" stroke=\"#fff\" stroke-width=\"1\" opacity=\".5\"/><circle cx=\"24\" cy=\"24\" r=\"2\" fill=\"#fff\" opacity=\".6\"/></svg>"}, {"id": "pop-16", "name": "Persona Creator", "desc": "Builds detailed user personas from research data, interviews, or demographic descriptions for UX design.", "longDesc": "Provide user research data, interview quotes, or demographic info and this skill synthesizes detailed personas with goals, frustrations, behaviors, and scenarios.", "category": "Research", "source": "Community", "section": "popular", "features": ["Research synthesis into persona attributes", "Goals, frustrations, and behavior mapping", "Scenario and journey generation", "Formatted persona card output"], "prompt": "You are a UX Research Analyst specializing in persona creation. When given user research data, synthesize it into detailed user personas.\n\nInclude: Demographics, representative quote, goals, frustrations, behaviors, and a scenario narrative.\n\nBase personas on patterns in the data, not stereotypes. Include 1 primary, 1-2 secondary, and optionally 1 anti-persona.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop16\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#c49a4a\"/><stop offset=\"1\" stop-color=\"#d4a84a\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop16)\"/><circle cx=\"24\" cy=\"18\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><path d=\"M16 34 Q16 26 24 26 Q32 26 32 34\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/></svg>"}, {"id": "pop-17", "name": "Performance Profiler", "desc": "Analyzes code or Lighthouse reports and provides actionable optimization recommendations ranked by impact.", "longDesc": "Submit code, bundle analysis, or Lighthouse JSON and get prioritized performance improvements. Covers Core Web Vitals, bundle size reduction, render optimization, and caching strategies.", "category": "Coding", "source": "Official", "section": "popular", "features": ["Core Web Vitals optimization", "Bundle size analysis and reduction", "Render and paint optimization", "Caching and lazy loading strategies"], "prompt": "You are a Web Performance Engineer. Analyze code or Lighthouse reports and produce prioritized optimization recommendations.\n\nCheck: Core Web Vitals (LCP, INP, CLS), bundle size, render performance, network optimization, caching, and lazy loading.\n\nFor each recommendation provide: Impact (High/Medium/Low), Effort (Quick win/Moderate/Major refactor), and specific Action.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop17\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#b06040\"/><stop offset=\"1\" stop-color=\"#c48060\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop17)\"/><path d=\"M14 32 L20 20 L26 26 L34 14\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"34\" cy=\"14\" r=\"2\" fill=\"#fff\" opacity=\".8\"/><path d=\"M30 14 L34 14 L34 18\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"}, {"id": "pop-18", "name": "Cursor Rules Generator", "desc": "Creates .cursorrules files tailored to your project's stack, conventions, and team preferences.", "longDesc": "Describe your project tech stack, coding conventions, and team preferences and this skill generates a comprehensive .cursorrules file. Covers code style, architecture patterns, naming conventions, testing requirements, and documentation standards.", "category": "Productivity", "source": "Cursor", "section": "popular", "features": ["Stack-specific rule generation", "Coding convention enforcement", "Architecture pattern guidelines", "Automatic rule conflict detection"], "prompt": "You are a Cursor Rules Architect. When the user describes their project, generate a comprehensive .cursorrules file.\n\nAsk for: Tech stack, code style, architecture, testing framework, documentation preferences.\n\nOutput sections: Role & Persona, Code Quality rules, Architecture rules, Error handling rules, Testing rules, Security rules, Documentation rules.\n\nRules should be specific and actionable, not vague.", "iconSvg": "<svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"g_pop18\" x1=\"0\" y1=\"0\" x2=\"48\" y2=\"48\" gradientUnits=\"userSpaceOnUse\"><stop stop-color=\"#5d7f94\"/><stop offset=\"1\" stop-color=\"#7a9bb0\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"24\" fill=\"url(#g_pop18)\"/><rect x=\"15\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"/><path d=\"M20 21 L20 27\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><path d=\"M24 19 L24 27\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/><path d=\"M28 23 L28 27\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linecap=\"round\"/></svg>"}];</script>
+<script>
+(()=>{
+  const $=s=>document.querySelector(s);
+  const $$=s=>document.querySelectorAll(s);
+
+  let favs=new Set(JSON.parse(localStorage.getItem('sd_favs')||'[]'));
+  let activeTab='forYou';
+  let activeFilter='All';
+  const saveFavs=()=>localStorage.setItem('sd_favs',JSON.stringify([...favs]));
+
+  const heartSVG=(filled)=>
+    `<svg width="14" height="14" viewBox="0 0 24 24" fill="${filled?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`;
+
+  // Drawer open/close
+  const fab=$('#fab'), drawer=$('#drawer'), scrim=$('#scrim');
+  function openDrawer(){drawer.classList.add('open');scrim.classList.add('open');fab.classList.add('hide')}
+  function closeDrawer(){drawer.classList.remove('open');scrim.classList.remove('open');fab.classList.remove('hide');closeDetail()}
+  fab.addEventListener('click',openDrawer);
+  scrim.addEventListener('click',closeDrawer);
+  $('#drawerClose').addEventListener('click',closeDrawer);
+
+  // Tabs
+  $$('.tab').forEach(t=>t.addEventListener('click',()=>{
+    $$('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    activeTab=t.dataset.tab;
+    $$('.panel').forEach(p=>p.classList.remove('active'));
+    $(`.panel[data-panel="${activeTab}"]`).classList.add('active');
+    if(activeTab==='favorites') renderFavorites();
+  }));
+
+  // Filter pills
+  document.addEventListener('click',e=>{
+    if(e.target.classList.contains('pill')){
+      $$('.pill').forEach(p=>p.classList.remove('active'));
+      e.target.classList.add('active');
+      activeFilter=e.target.dataset.cat;
+      renderPopular();
+    }
+  });
+
+  // Fav toggle
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest('.fav');
+    if(!btn) return;
+    e.stopPropagation();
+    const id=btn.dataset.id;
+    if(favs.has(id)){favs.delete(id);btn.classList.remove('on');btn.innerHTML=heartSVG(false)}
+    else{favs.add(id);btn.classList.add('on');btn.innerHTML=heartSVG(true)}
+    saveFavs();updateBadge();
+  });
+
+  // Card click
+  document.addEventListener('click',e=>{
+    const card=e.target.closest('.card');
+    if(!card) return;
+    openDetail(card.dataset.id);
+  });
+
+  const updateBadge=()=>{
+    const b=$('#favBadge');
+    if(favs.size>0){b.textContent=favs.size;b.classList.remove('hidden')}
+    else b.classList.add('hidden');
+  };
+
+  const SKILLS=window.__SKILLS__;
+  function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  function cardHTML(s){
+    const isFav=favs.has(s.id);
+    return `<div class="card" data-id="${s.id}">
+      <div class="card-icon">${s.iconSvg}</div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">${esc(s.name)}</span>
+          <button class="fav ${isFav?'on':''}" data-id="${s.id}" aria-label="Favorite">${heartSVG(isFav)}</button>
+        </div>
+        <div class="card-desc">${esc(s.desc)}</div>
+        <div class="card-tags"><span class="tag tag-cat">${esc(s.category)}</span><span class="tag tag-src">${esc(s.source)}</span></div>
+      </div>
+    </div>`;
+  }
+
+  function renderForYou(){$('#forYouList').innerHTML=SKILLS.filter(s=>s.section==='forYou').map(cardHTML).join('')}
+  function renderPopular(){
+    const filtered=activeFilter==='All'?SKILLS.filter(s=>s.section==='popular'):SKILLS.filter(s=>s.section==='popular'&&s.category===activeFilter);
+    $('#popularList').innerHTML=filtered.map(cardHTML).join('');
+  }
+  function renderFavorites(){
+    const el=$('#favList'),empty=$('#emptyFav'),fs=SKILLS.filter(s=>favs.has(s.id));
+    if(fs.length===0){el.innerHTML='';empty.style.display='flex'}
+    else{empty.style.display='none';el.innerHTML=fs.map(cardHTML).join('')}
+  }
+
+  function openDetail(id){
+    const s=SKILLS.find(sk=>sk.id===id);if(!s) return;
+    $('#ovIcon').innerHTML=s.iconSvg.replace(/width="48"/g,'width="56"').replace(/height="48"/g,'height="56"');
+    $('#ovName').textContent=s.name;
+    $('#ovCat').textContent=s.category+' · '+s.source;
+    $('#ovDesc').textContent=s.longDesc;
+    $('#ovFeatures').innerHTML=s.features.map(f=>`<li>${esc(f)}</li>`).join('');
+    $('#ovPrompt').textContent=s.prompt;
+    $('#copyBtn').classList.remove('copied');
+    $('#copyBtn').innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy Prompt';
+    $('#overlay').classList.add('open');
+  }
+  function closeDetail(){$('#overlay').classList.remove('open')}
+
+  $('#closeBtn').addEventListener('click',closeDetail);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      if($('#overlay').classList.contains('open')) closeDetail();
+      else if(drawer.classList.contains('open')) closeDrawer();
+    }
+  });
+
+  $('#copyBtn').addEventListener('click',()=>{
+    const text=$('#ovPrompt').textContent;
+    navigator.clipboard.writeText(text).then(()=>{
+      const btn=$('#copyBtn');btn.classList.add('copied');
+      btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
+      setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy Prompt'},2000);
+    });
+  });
+
+  renderForYou();renderPopular();renderFavorites();updateBadge();
+})();
+</script>
+
+</body>
+</html>

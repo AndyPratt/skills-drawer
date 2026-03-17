@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indigo Color System — #6366f1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#fafafa;color:#1a1a1a;line-height:1.5;-webkit-font-smoothing:antialiased}
+.container{max-width:960px;margin:0 auto;padding:32px 24px 80px}
+header{text-align:center;padding:48px 0 40px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:40px}
+h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.brand-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:999px;background:#6366f1;color:#fff;font-size:14px;font-weight:600;margin-bottom:16px}
+.brand-dot{width:14px;height:14px;border-radius:50%;background:#fff;opacity:.3}
+.subtitle{font-size:15px;color:#6b7280;max-width:480px;margin:0 auto}
+.mode-toggle{display:flex;justify-content:center;gap:4px;margin:32px auto 0;background:#f3f4f6;border-radius:10px;padding:3px;width:fit-content}
+.mode-btn{padding:8px 20px;border-radius:8px;border:none;background:transparent;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.mode-btn.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+section{margin-bottom:48px}
+.section-hdr{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.section-sub{font-size:13px;color:#9ca3af}
+.scale-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.swatch{position:relative;border-radius:10px;aspect-ratio:1;cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;overflow:hidden}
+.swatch:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.swatch-step{font-size:10px;font-weight:700;opacity:.7}
+.swatch-hex{font-size:10px;font-weight:600;font-family:ui-monospace,monospace}
+.swatch.light .swatch-step,.swatch.light .swatch-hex{color:#1a1a1a}
+.swatch.dark .swatch-step,.swatch.dark .swatch-hex{color:#fff}
+.swatch .brand-marker{position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.semantic-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px}
+.semantic-group{flex:1;min-width:180px}
+.semantic-label{font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.semantic-swatches{display:flex;gap:6px}
+.semantic-swatch{flex:1;border-radius:10px;height:64px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;transition:transform .15s,box-shadow .15s;position:relative}
+.semantic-swatch:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.semantic-swatch .swatch-step{font-size:9px}
+.semantic-swatch .swatch-hex{font-size:9px}
+.tooltip{position:fixed;z-index:1000;background:#1a1a1a;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:220px;line-height:1.6}
+.tooltip.show{opacity:1}
+.tooltip-hex{font-family:ui-monospace,monospace;font-weight:700;font-size:14px}
+.tooltip-oklch{font-family:ui-monospace,monospace;color:#a5b4fc;font-size:11px}
+.tooltip-contrast{font-size:11px;color:#9ca3af;margin-top:4px}
+.tooltip-contrast span{font-weight:600}
+.tooltip-contrast .pass{color:#34d399}
+.tooltip-contrast .fail{color:#f87171}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:1001;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.contrast-section{margin-top:48px;border-top:1px solid rgba(0,0,0,.06);padding-top:32px}
+.contrast-table{width:100%;border-collapse:collapse;font-size:13px}
+.contrast-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(0,0,0,.06)}
+.contrast-table td{padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.03)}
+.contrast-table .pair-preview{display:inline-flex;align-items:center;gap:8px}
+.contrast-table .pair-dot{width:20px;height:20px;border-radius:4px;border:1px solid rgba(0,0,0,.06)}
+.contrast-table .ratio{font-family:ui-monospace,monospace;font-weight:600}
+.contrast-table .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.badge-aaa{background:#ecfdf5;color:#065f46}
+.badge-aa{background:#eff6ff;color:#1e40af}
+.badge-fail{background:#fef2f2;color:#991b1b}
+@media(max-width:640px){
+  .scale-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
+  .semantic-row{flex-direction:column;gap:16px}
+  h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="brand-chip"><div class="brand-dot"></div>#6366f1</div>
+  <h1>Indigo Color System</h1>
+  <p class="subtitle">A complete, accessible color palette with semantic tokens, dark mode, and contrast ratios.</p>
+  <div class="mode-toggle">
+    <button class="mode-btn active" data-mode="light">Light Mode</button>
+    <button class="mode-btn" data-mode="dark">Dark Mode</button>
+  </div>
+</header>
+<div id="content"></div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<div class="toast" id="toast">Copied!</div>
+<script>
+const DATA={"primary": [{"step": "50", "hex": "#eef2ff", "oklch": "oklch(0.96 0.03 285)", "contrastWhite": 1.1, "contrastBlack": 18.8, "isLight": true}, {"step": "100", "hex": "#e0e7ff", "oklch": "oklch(0.93 0.06 285)", "contrastWhite": 1.2, "contrastBlack": 17.0, "isLight": true}, {"step": "200", "hex": "#c7d2fe", "oklch": "oklch(0.87 0.10 285)", "contrastWhite": 1.5, "contrastBlack": 14.1, "isLight": true}, {"step": "300", "hex": "#a5b4fc", "oklch": "oklch(0.79 0.15 285)", "contrastWhite": 2.0, "contrastBlack": 10.5, "isLight": true}, {"step": "400", "hex": "#818cf8", "oklch": "oklch(0.68 0.21 285)", "contrastWhite": 3.0, "contrastBlack": 7.0, "isLight": false}, {"step": "500", "hex": "#6366f1", "oklch": "oklch(0.55 0.26 285)", "contrastWhite": 4.5, "contrastBlack": 4.7, "isLight": false}, {"step": "600", "hex": "#4f46e5", "oklch": "oklch(0.48 0.27 285)", "contrastWhite": 6.3, "contrastBlack": 3.3, "isLight": false}, {"step": "700", "hex": "#4338ca", "oklch": "oklch(0.42 0.25 285)", "contrastWhite": 7.9, "contrastBlack": 2.7, "isLight": false}, {"step": "800", "hex": "#3730a3", "oklch": "oklch(0.36 0.22 285)", "contrastWhite": 9.9, "contrastBlack": 2.1, "isLight": false}, {"step": "900", "hex": "#312e81", "oklch": "oklch(0.31 0.18 285)", "contrastWhite": 11.4, "contrastBlack": 1.8, "isLight": false}, {"step": "950", "hex": "#1e1b4b", "oklch": "oklch(0.21 0.13 285)", "contrastWhite": 16.0, "contrastBlack": 1.3, "isLight": false}], "neutral": [{"step": "50", "hex": "#f8f8fc", "oklch": "oklch(0.98 0.01 285)", "contrastWhite": 1.1, "contrastBlack": 19.8, "isLight": true}, {"step": "100", "hex": "#f1f1f8", "oklch": "oklch(0.96 0.02 285)", "contrastWhite": 1.1, "contrastBlack": 18.7, "isLight": true}, {"step": "200", "hex": "#e2e2ee", "oklch": "oklch(0.91 0.03 285)", "contrastWhite": 1.3, "contrastBlack": 16.3, "isLight": true}, {"step": "300", "hex": "#c8c8da", "oklch": "oklch(0.83 0.04 285)", "contrastWhite": 1.6, "contrastBlack": 12.7, "isLight": true}, {"step": "400", "hex": "#9d9db5", "oklch": "oklch(0.69 0.05 285)", "contrastWhite": 2.7, "contrastBlack": 7.9, "isLight": false}, {"step": "500", "hex": "#71718a", "oklch": "oklch(0.55 0.05 285)", "contrastWhite": 4.7, "contrastBlack": 4.4, "isLight": false}, {"step": "600", "hex": "#55556e", "oklch": "oklch(0.44 0.05 285)", "contrastWhite": 7.2, "contrastBlack": 2.9, "isLight": false}, {"step": "700", "hex": "#3f3f56", "oklch": "oklch(0.36 0.05 285)", "contrastWhite": 10.2, "contrastBlack": 2.1, "isLight": false}, {"step": "800", "hex": "#2b2b42", "oklch": "oklch(0.27 0.05 285)", "contrastWhite": 13.8, "contrastBlack": 1.5, "isLight": false}, {"step": "900", "hex": "#1c1c33", "oklch": "oklch(0.20 0.04 285)", "contrastWhite": 16.6, "contrastBlack": 1.3, "isLight": false}, {"step": "950", "hex": "#101024", "oklch": "oklch(0.14 0.04 285)", "contrastWhite": 18.7, "contrastBlack": 1.1, "isLight": false}], "semantic": {"Success": [{"label": "Light", "hex": "#ecfdf5", "oklch": "oklch(0.98 0.03 165)", "contrastWhite": 1.1, "contrastBlack": 19.9, "isLight": true}, {"label": "Default", "hex": "#10b981", "oklch": "oklch(0.70 0.17 165)", "contrastWhite": 2.5, "contrastBlack": 8.3, "isLight": false}, {"label": "Dark", "hex": "#065f46", "oklch": "oklch(0.40 0.12 165)", "contrastWhite": 7.7, "contrastBlack": 2.7, "isLight": false}], "Warning": [{"label": "Light", "hex": "#fffbeb", "oklch": "oklch(0.99 0.03 85)", "contrastWhite": 1.0, "contrastBlack": 20.3, "isLight": true}, {"label": "Default", "hex": "#f59e0b", "oklch": "oklch(0.77 0.17 85)", "contrastWhite": 2.1, "contrastBlack": 9.8, "isLight": true}, {"label": "Dark", "hex": "#92400e", "oklch": "oklch(0.47 0.12 85)", "contrastWhite": 7.1, "contrastBlack": 3.0, "isLight": false}], "Error": [{"label": "Light", "hex": "#fef2f2", "oklch": "oklch(0.97 0.02 25)", "contrastWhite": 1.1, "contrastBlack": 19.2, "isLight": true}, {"label": "Default", "hex": "#ef4444", "oklch": "oklch(0.63 0.22 25)", "contrastWhite": 3.8, "contrastBlack": 5.6, "isLight": false}, {"label": "Dark", "hex": "#991b1b", "oklch": "oklch(0.39 0.16 25)", "contrastWhite": 8.3, "contrastBlack": 2.5, "isLight": false}], "Info": [{"label": "Light", "hex": "#eff6ff", "oklch": "oklch(0.97 0.02 250)", "contrastWhite": 1.1, "contrastBlack": 19.3, "isLight": true}, {"label": "Default", "hex": "#3b82f6", "oklch": "oklch(0.62 0.21 250)", "contrastWhite": 3.7, "contrastBlack": 5.7, "isLight": false}, {"label": "Dark", "hex": "#1e40af", "oklch": "oklch(0.40 0.18 250)", "contrastWhite": 8.7, "contrastBlack": 2.4, "isLight": false}]}, "darkPrimary": [{"step": "50", "hex": "#1e1b4b", "oklch": "oklch(0.21 0.13 285)", "contrastWhite": 16.0, "contrastBlack": 1.3, "isLight": false}, {"step": "100", "hex": "#252254", "oklch": "oklch(0.24 0.14 285)", "contrastWhite": 14.6, "contrastBlack": 1.4, "isLight": false}, {"step": "200", "hex": "#312e81", "oklch": "oklch(0.31 0.18 285)", "contrastWhite": 11.4, "contrastBlack": 1.8, "isLight": false}, {"step": "300", "hex": "#3730a3", "oklch": "oklch(0.36 0.22 285)", "contrastWhite": 9.9, "contrastBlack": 2.1, "isLight": false}, {"step": "400", "hex": "#4f46e5", "oklch": "oklch(0.48 0.27 285)", "contrastWhite": 6.3, "contrastBlack": 3.3, "isLight": false}, {"step": "500", "hex": "#6366f1", "oklch": "oklch(0.55 0.26 285)", "contrastWhite": 4.5, "contrastBlack": 4.7, "isLight": false}, {"step": "600", "hex": "#818cf8", "oklch": "oklch(0.68 0.21 285)", "contrastWhite": 3.0, "contrastBlack": 7.0, "isLight": false}, {"step": "700", "hex": "#a5b4fc", "oklch": "oklch(0.79 0.15 285)", "contrastWhite": 2.0, "contrastBlack": 10.5, "isLight": true}, {"step": "800", "hex": "#c7d2fe", "oklch": "oklch(0.87 0.10 285)", "contrastWhite": 1.5, "contrastBlack": 14.1, "isLight": true}, {"step": "900", "hex": "#e0e7ff", "oklch": "oklch(0.93 0.06 285)", "contrastWhite": 1.2, "contrastBlack": 17.0, "isLight": true}, {"step": "950", "hex": "#eef2ff", "oklch": "oklch(0.96 0.03 285)", "contrastWhite": 1.1, "contrastBlack": 18.8, "isLight": true}], "darkNeutral": [{"step": "50", "hex": "#0c0c1a", "oklch": "oklch(0.10 0.03 285)", "contrastWhite": 19.4, "contrastBlack": 1.1, "isLight": false}, {"step": "100", "hex": "#101024", "oklch": "oklch(0.14 0.04 285)", "contrastWhite": 18.7, "contrastBlack": 1.1, "isLight": false}, {"step": "200", "hex": "#1c1c33", "oklch": "oklch(0.20 0.04 285)", "contrastWhite": 16.6, "contrastBlack": 1.3, "isLight": false}, {"step": "300", "hex": "#2b2b42", "oklch": "oklch(0.27 0.05 285)", "contrastWhite": 13.8, "contrastBlack": 1.5, "isLight": false}, {"step": "400", "hex": "#3f3f56", "oklch": "oklch(0.36 0.05 285)", "contrastWhite": 10.2, "contrastBlack": 2.1, "isLight": false}, {"step": "500", "hex": "#55556e", "oklch": "oklch(0.44 0.05 285)", "contrastWhite": 7.2, "contrastBlack": 2.9, "isLight": false}, {"step": "600", "hex": "#9d9db5", "oklch": "oklch(0.69 0.05 285)", "contrastWhite": 2.7, "contrastBlack": 7.9, "isLight": false}, {"step": "700", "hex": "#c8c8da", "oklch": "oklch(0.83 0.04 285)", "contrastWhite": 1.6, "contrastBlack": 12.7, "isLight": true}, {"step": "800", "hex": "#e2e2ee", "oklch": "oklch(0.91 0.03 285)", "contrastWhite": 1.3, "contrastBlack": 16.3, "isLight": true}, {"step": "900", "hex": "#f1f1f8", "oklch": "oklch(0.96 0.02 285)", "contrastWhite": 1.1, "contrastBlack": 18.7, "isLight": true}, {"step": "950", "hex": "#f8f8fc", "oklch": "oklch(0.98 0.01 285)", "contrastWhite": 1.1, "contrastBlack": 19.8, "isLight": true}], "darkSemantic": {"Success": [{"label": "Light", "hex": "#065f46", "oklch": "oklch(0.40 0.12 165)", "contrastWhite": 7.7, "contrastBlack": 2.7, "isLight": false}, {"label": "Default", "hex": "#34d399", "oklch": "oklch(0.78 0.15 165)", "contrastWhite": 1.9, "contrastBlack": 10.9, "isLight": true}, {"label": "Dark", "hex": "#ecfdf5", "oklch": "oklch(0.98 0.03 165)", "contrastWhite": 1.1, "contrastBlack": 19.9, "isLight": true}], "Warning": [{"label": "Light", "hex": "#92400e", "oklch": "oklch(0.47 0.12 85)", "contrastWhite": 7.1, "contrastBlack": 3.0, "isLight": false}, {"label": "Default", "hex": "#fbbf24", "oklch": "oklch(0.84 0.15 85)", "contrastWhite": 1.7, "contrastBlack": 12.6, "isLight": true}, {"label": "Dark", "hex": "#fffbeb", "oklch": "oklch(0.99 0.03 85)", "contrastWhite": 1.0, "contrastBlack": 20.3, "isLight": true}], "Error": [{"label": "Light", "hex": "#991b1b", "oklch": "oklch(0.39 0.16 25)", "contrastWhite": 8.3, "contrastBlack": 2.5, "isLight": false}, {"label": "Default", "hex": "#f87171", "oklch": "oklch(0.72 0.19 25)", "contrastWhite": 2.8, "contrastBlack": 7.6, "isLight": false}, {"label": "Dark", "hex": "#fef2f2", "oklch": "oklch(0.97 0.02 25)", "contrastWhite": 1.1, "contrastBlack": 19.2, "isLight": true}], "Info": [{"label": "Light", "hex": "#1e40af", "oklch": "oklch(0.40 0.18 250)", "contrastWhite": 8.7, "contrastBlack": 2.4, "isLight": false}, {"label": "Default", "hex": "#60a5fa", "oklch": "oklch(0.72 0.17 250)", "contrastWhite": 2.5, "contrastBlack": 8.3, "isLight": false}, {"label": "Dark", "hex": "#eff6ff", "oklch": "oklch(0.97 0.02 250)", "contrastWhite": 1.1, "contrastBlack": 19.3, "isLight": true}]}};
+let mode="light";
+
+function ratingBadge(ratio){
+  if(ratio>=7) return '<span class="badge badge-aaa">AAA</span>';
+  if(ratio>=4.5) return '<span class="badge badge-aa">AA</span>';
+  return '<span class="badge badge-fail">FAIL</span>';
+}
+
+function renderScale(items,label,sub){
+  let h='<section><div class="section-hdr"><h2>'+label+'</h2><span class="section-sub">'+sub+'</span></div><div class="scale-grid">';
+  items.forEach(c=>{
+    const cls=c.isLight?'light':'dark';
+    const marker=c.hex.toLowerCase()==='#6366f1'?'<div class="brand-marker"></div>':'';
+    h+='<div class="swatch '+cls+'" style="background:'+c.hex+'" data-hex="'+c.hex+'" data-oklch="'+c.oklch+'" data-cw="'+c.contrastWhite+'" data-cb="'+c.contrastBlack+'">'+marker+'<div class="swatch-step">'+(c.step||c.label)+'</div><div class="swatch-hex">'+c.hex+'</div></div>';
+  });
+  h+='</div></section>';
+  return h;
+}
+
+function renderSemantic(data,label){
+  let h='<section><div class="section-hdr"><h2>'+label+'</h2><span class="section-sub">Context colors for UI feedback</span></div><div class="semantic-row">';
+  for(const[name,colors] of Object.entries(data)){
+    h+='<div class="semantic-group"><div class="semantic-label">'+name+'</div><div class="semantic-swatches">';
+    colors.forEach(c=>{
+      const cls=c.isLight?'light':'dark';
+      h+='<div class="semantic-swatch '+cls+'" style="background:'+c.hex+'" data-hex="'+c.hex+'" data-oklch="'+c.oklch+'" data-cw="'+c.contrastWhite+'" data-cb="'+c.contrastBlack+'"><div class="swatch-step">'+c.label+'</div><div class="swatch-hex">'+c.hex+'</div></div>';
+    });
+    h+='</div></div>';
+  }
+  h+='</div></section>';
+  return h;
+}
+
+function renderContrastTable(){
+  const pairs=[
+    ["primary-500 on white","#6366f1","#ffffff"],
+    ["primary-600 on white","#4f46e5","#ffffff"],
+    ["White on primary-500","#ffffff","#6366f1"],
+    ["White on primary-600","#ffffff","#4f46e5"],
+    ["neutral-900 on neutral-50","#1c1c33","#f8f8fc"],
+    ["Success on white","#10b981","#ffffff"],
+    ["Error on white","#ef4444","#ffffff"],
+    ["Warning on white","#f59e0b","#ffffff"],
+    ["Info on white","#3b82f6","#ffffff"],
+  ];
+  let h='<section class="contrast-section"><div class="section-hdr"><h2>Contrast Matrix</h2><span class="section-sub">WCAG 2.1 compliance</span></div>';
+  h+='<table class="contrast-table"><thead><tr><th>Pair</th><th>Ratio</th><th>Rating</th></tr></thead><tbody>';
+  pairs.forEach(([label,fg,bg])=>{
+    // compute ratio
+    function hexRgb(hex){const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+    function lum(r,g,b){function lin(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4)}return 0.2126*lin(r)+0.7152*lin(g)+0.0722*lin(b)}
+    const[r1,g1,b1]=hexRgb(fg);const[r2,g2,b2]=hexRgb(bg);
+    const l1=lum(r1,g1,b1);const l2=lum(r2,g2,b2);
+    const ratio=((Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05)).toFixed(1);
+    h+='<tr><td><div class="pair-preview"><div class="pair-dot" style="background:'+fg+'"></div><div class="pair-dot" style="background:'+bg+'"></div>'+label+'</div></td>';
+    h+='<td class="ratio">'+ratio+':1</td>';
+    h+='<td>'+ratingBadge(parseFloat(ratio))+'</td></tr>';
+  });
+  h+='</tbody></table></section>';
+  return h;
+}
+
+function render(){
+  const el=document.getElementById('content');
+  let h='';
+  if(mode==='light'){
+    h+=renderScale(DATA.primary,'Primary','Indigo · 11 steps · oklch perceptual spacing');
+    h+=renderScale(DATA.neutral,'Neutral','Indigo-tinted grays');
+    h+=renderSemantic(DATA.semantic,'Semantic');
+  }else{
+    h+=renderScale(DATA.darkPrimary,'Primary (Dark)','Inverted scale · desaturated for dark backgrounds');
+    h+=renderScale(DATA.darkNeutral,'Neutral (Dark)','Dark backgrounds < 15% lightness');
+    h+=renderSemantic(DATA.darkSemantic,'Semantic (Dark)');
+  }
+  h+=renderContrastTable();
+  el.innerHTML=h;
+}
+
+// Mode toggle
+document.querySelector('.mode-toggle').addEventListener('click',e=>{
+  const btn=e.target.closest('.mode-btn');
+  if(!btn)return;
+  mode=btn.dataset.mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(mode==='dark'){document.body.style.background='#0f0f0f';document.body.style.color='#f0f0f0';document.querySelector('header').style.borderColor='rgba(255,255,255,.08)'}
+  else{document.body.style.background='#fafafa';document.body.style.color='#1a1a1a';document.querySelector('header').style.borderColor='rgba(0,0,0,.06)'}
+  render();
+});
+
+// Tooltip
+const tip=document.getElementById('tooltip');
+document.addEventListener('mouseover',e=>{
+  const sw=e.target.closest('[data-hex]');
+  if(!sw){tip.classList.remove('show');return}
+  const hex=sw.dataset.hex;const oklch=sw.dataset.oklch;const cw=sw.dataset.cw;const cb=sw.dataset.cb;
+  tip.innerHTML='<div class="tooltip-hex">'+hex+'</div><div class="tooltip-oklch">'+oklch+'</div><div class="tooltip-contrast">vs white: <span class="'+(parseFloat(cw)>=4.5?'pass':'fail')+'">'+cw+':1</span> · vs black: <span class="'+(parseFloat(cb)>=4.5?'pass':'fail')+'">'+cb+':1</span></div>';
+  const r=sw.getBoundingClientRect();
+  tip.style.left=Math.min(r.left,window.innerWidth-230)+'px';
+  tip.style.top=(r.top-tip.offsetHeight-8)+'px';
+  tip.classList.add('show');
+});
+document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-hex]'))tip.classList.remove('show')});
+
+// Copy on click
+const toast=document.getElementById('toast');
+document.addEventListener('click',e=>{
+  const sw=e.target.closest('[data-hex]');
+  if(!sw)return;
+  navigator.clipboard.writeText(sw.dataset.hex);
+  toast.textContent='Copied '+sw.dataset.hex;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),1500);
+});
+
+render();
+</script>
+</body>
+</html>
